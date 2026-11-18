@@ -6,8 +6,10 @@
 
 <p align="center">
   Struggling with DSA problems? See the loop run, then pick the best one.<br />
-  <a href="https://taifatang.github.io/loopwise/"><b>▶ Try it live</b></a>
+  <a href="https://taifatang.github.io/loopwise/"><b>Visit the Webiste</b></a>
 </p>
+
+![Alt Preview](assets/preview.png)
 
 ## Who it's for
 Loopwise is for people who get stuck on DSA and LeetCode-style problems, especially when the hard part is knowing **which loop to write** (indexed `for`, `while`, two pointers, sliding window, binary search, nested loops and so on) and **which variables to keep track of**.
