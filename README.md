@@ -6,7 +6,7 @@
 
 <p align="center">
   LeetCode-style practice for choosing the right <b>loop pattern</b> and <b>variables</b>, with no typing needed.<br />
-  <a href="https://tl-tai-tang.github.io/loopwise/"><b>▶ Try it live</b></a>
+  <a href="https://taifatang.github.io/loopwise/"><b>▶ Try it live</b></a>
 </p>
 
 ## Run
