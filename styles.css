@@ -112,3 +112,21 @@ main { flex: 1; padding: 20px; max-width: 1000px; }
 .vars-table tr.hot td:first-child { border-left: 3px solid var(--blue); }
 .vars-table td { border-radius: 2px; transition: background .2s; }
 .ref-btn { margin-top: 10px; }
+
+/* pattern guide demos */
+.demo { width: 230px; min-height: 92px; display: flex; flex-direction: column; justify-content: flex-start; gap: 4px; }
+.d-row { display: flex; align-items: flex-end; gap: 3px; justify-content: flex-start; }
+.d-row.tree { justify-content: center; gap: 10px; }
+.d-grid { display: grid; gap: 3px; }
+.d-cell { display: flex; flex-direction: column; align-items: center; }
+.d-ptr { height: 13px; font-size: 9.5px; font-weight: 700; color: var(--accent-text); white-space: nowrap; line-height: 13px; }
+.d-grid .d-ptr, .d-row.tree .d-ptr { display: none; }
+.d-box { width: 24px; height: 24px; border: 1.5px solid var(--border); border-radius: 4px; background: var(--panel2);
+  display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 600; transition: all .25s; }
+.d-row.tree .d-box { border-radius: 50%; }
+.d-cell.soft .d-box { border-color: var(--blue); background: rgba(79, 140, 255, .15); }
+.d-cell.on .d-box { border-color: var(--accent); background: rgba(255, 161, 22, .3); transform: translateY(-2px); }
+.d-cell.dim .d-box { opacity: .3; }
+.d-sep { width: 2px; height: 24px; background: var(--muted); margin: 0 4px; align-self: flex-end; }
+.d-link { color: var(--muted); font-size: 12px; align-self: flex-end; line-height: 24px; }
+.d-text { font-size: 11px; color: var(--muted); font-family: monospace; min-height: 14px; }

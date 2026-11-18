@@ -242,8 +242,8 @@ const refPlayer = createPlayer($('#player-ref'));
 
 // ---------- Guide ----------
 function renderGuide() {
-  $('#guide-table').innerHTML = `<tr><th>Loop</th><th>Shape</th><th>Use when</th><th>Signals</th></tr>` +
-    Object.values(LOOPS).map((l) => `<tr><td><b>${l.name}</b>${l.level ? ' <span class="diff Medium">Medium</span>' : ''}</td><td><code>${l.sig}</code></td><td>${l.when}</td><td>${l.signals.join('<br>')}</td></tr>`).join('');
+  $('#guide-table').innerHTML = `<tr><th>Loop</th><th>Shape</th><th>How it moves</th><th>Use when</th><th>Signals</th></tr>` +
+    Object.entries(LOOPS).map(([k, l]) => `<tr><td><b>${l.name}</b>${l.level ? ' <span class="diff Medium">Medium</span>' : ''}</td><td><code>${l.sig}</code></td><td><div class="demo" data-loop="${k}"></div></td><td>${l.when}</td><td>${l.signals.join('<br>')}</td></tr>`).join('');
   $('#vars-table').innerHTML = `<tr><th>Variable</th><th>Declaration</th><th>Purpose</th></tr>` +
     Object.values(VARS).map((v) => `<tr><td><b>${v.name}</b>${v.level ? ' <span class="diff Medium">Medium</span>' : ''}</td><td><code>${esc(v.decl)}</code></td><td>${v.desc}</td></tr>`).join('');
 }
@@ -296,4 +296,5 @@ $('#theme-toggle').addEventListener('click', () => {
 
 renderThemeToggle();
 renderGuide();
+startDemos();
 selectProblem(PROBLEMS[0]);
