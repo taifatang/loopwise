@@ -25,6 +25,14 @@ function evaluate(problem, loop, vars) {
 
 const varLabel = (r) => (Array.isArray(r) ? r.map((v) => VARS[v].name).join(' or ') : VARS[r].name);
 
+// Mobile: the problem list collapses behind a toggle button.
+function setSidebar(open) {
+  document.body.classList.toggle('sidebar-open', open);
+  $('#sidebar-toggle').setAttribute('aria-expanded', open);
+  $('#sidebar-toggle').textContent = open ? '✕ Close problems' : '☰ Problems';
+}
+$('#sidebar-toggle').addEventListener('click', () => setSidebar(!document.body.classList.contains('sidebar-open')));
+
 // ---------- Rendering ----------
 function renderProblemList() {
   $('#problem-list').innerHTML = PROBLEMS.map((p, i) => `
@@ -54,6 +62,7 @@ function renderLoops() {
     <div class="loop-card ${state.loop === k ? 'selected' : ''}" data-k="${k}">
       <div class="name">${l.name}</div>
       <code>${l.sig}</code>
+      <button type="button" class="info" aria-label="About ${l.name}">i</button>
       <div class="tooltip">
         <div class="tt-title">Use when</div>
         <div>${l.when}</div>
@@ -61,13 +70,23 @@ function renderLoops() {
         <ul>${l.signals.map((s) => `<li>${s}</li>`).join('')}</ul>
       </div>
     </div>`).join('');
+  document.querySelectorAll('.loop-card .info').forEach((el) =>
+    el.addEventListener('click', (e) => e.stopPropagation()));
   document.querySelectorAll('.loop-card').forEach((el) =>
     el.addEventListener('click', () => { state.loop = el.dataset.k; renderLoops(); renderSkeleton(); updateVisualiser(); }));
 }
 
 function renderVars() {
-  $('#vars').innerHTML = visible(VARS).map(([k, v]) => `
-    <span class="chip ${state.vars.has(k) ? 'selected' : ''}" data-k="${k}" title="${v.desc}">${v.name}</span>`).join('');
+  const shown = new Set(visible(VARS).map(([k]) => k));
+  $('#vars').innerHTML = VAR_GROUPS.map((g) => {
+    const chips = g.vars.filter((k) => shown.has(k)).map((k) => `
+      <span class="chip ${state.vars.has(k) ? 'selected' : ''}" data-k="${k}" title="${VARS[k].desc}">${VARS[k].name}</span>`).join('');
+    return chips ? `
+    <div class="var-group">
+      <div class="var-group-title">${g.name} <span class="muted">— ${g.hint}</span></div>
+      <div class="chips">${chips}</div>
+    </div>` : '';
+  }).join('');
   document.querySelectorAll('.chip').forEach((el) =>
     el.addEventListener('click', () => {
       const k = el.dataset.k;
@@ -253,6 +272,7 @@ function esc(s) { return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(
 
 function selectProblem(p) {
   state.problem = p;
+  setSidebar(false);
   resetChoice();
   renderProblemList();
   renderProblem();

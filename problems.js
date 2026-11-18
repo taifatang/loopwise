@@ -758,7 +758,16 @@ PROBLEMS.push(
 );
 
 // Role-based clues used by progressive feedback (doesn't name the variable)
-VARS.counter.clue = "Something that tallies how many times a thing happens.";
+// Groups shown in the "Choose the variables" step (order = display order).
+const VAR_GROUPS = [
+  { name: 'Counting & totals',     hint: 'Numbers that build up as you loop',   vars: ['counter', 'sum', 'result'] },
+  { name: 'Remembering a value',   hint: 'Keep something from earlier',         vars: ['max', 'min', 'temp', 'prevCurr', 'flag'] },
+  { name: 'Pointers & positions',  hint: 'Where you are in the input',          vars: ['lr', 'slow', 'bounds', 'winStart', 'ij'] },
+  { name: 'Lookups',               hint: 'Quick "have I seen this?" checks',    vars: ['map', 'set', 'visited'] },
+  { name: 'Collections',           hint: 'Hold items to process or build up',   vars: ['stack', 'queue', 'dp', 'path'] },
+];
+
+VARS.counter.clue ="Something that tallies how many times a thing happens.";
 VARS.temp.clue = "Somewhere to park a value for a moment so it isn't overwritten.";
 VARS.max.clue = "Something that remembers the biggest / best answer so far.";
 VARS.min.clue = "Something that remembers the smallest value seen so far.";
