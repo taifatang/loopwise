@@ -1,6 +1,13 @@
-# Loopwise
+<p align="center">
+  <img src="logo.svg" alt="Loopwise logo" width="96" height="96" />
+</p>
 
-LeetCode-style practice for choosing the right **loop pattern** and **variables**, with no typing needed.
+<h1 align="center">Loopwise</h1>
+
+<p align="center">
+  LeetCode-style practice for choosing the right <b>loop pattern</b> and <b>variables</b>, with no typing needed.<br />
+  <a href="https://tl-tai-tang.github.io/loopwise/"><b>▶ Try it live</b></a>
+</p>
 
 ## Run
 Open `index.html` in a browser, or serve it:
