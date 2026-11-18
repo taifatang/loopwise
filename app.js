@@ -1,5 +1,5 @@
 const $ = (s) => document.querySelector(s);
-const PTR_COLORS = ['#ffa116', '#4f8cff', '#2cbb5d', '#e05cd6', '#ef4743', '#36c5d1'];
+const PTR_COLORS = ['var(--accent-text)', 'var(--blue)', 'var(--green)', '#c026d3', 'var(--red)', '#0891b2'];
 
 const state = {
   problem: null,
@@ -31,8 +31,8 @@ const varLabel = (r) => (Array.isArray(r) ? r.map((v) => VARS[v].name).join(' or
 // ---------- Rendering ----------
 function renderProblemList() {
   $('#problem-list').innerHTML = PROBLEMS.map((p, i) => `
-    <div class="prob-item ${state.problem === p ? 'active' : ''}" data-i="${i}">
-      <span>${state.solved[p.id] ? '✅' : '⬜'} ${i + 1}. ${p.title}</span>
+    <div class="prob-item ${state.problem === p ? 'active' : ''} ${state.solved[p.id] ? 'done' : ''}" data-i="${i}"${state.solved[p.id] ? ' title="Solved"' : ''}>
+      <span class="prob-title">${i + 1}. ${p.title}</span>
       <span class="diff ${p.difficulty}">${p.difficulty}</span>
     </div>`).join('');
   document.querySelectorAll('.prob-item').forEach((el) =>
@@ -245,5 +245,17 @@ document.querySelectorAll('.tab').forEach((t) => t.addEventListener('click', () 
   document.querySelectorAll('.view').forEach((v) => v.classList.toggle('hidden', v.id !== t.dataset.view));
 }));
 
+// ---------- Theme ----------
+function renderThemeToggle() {
+  $('#theme-toggle').textContent = document.documentElement.dataset.theme === 'light' ? '🌙' : '☀️';
+}
+$('#theme-toggle').addEventListener('click', () => {
+  const next = document.documentElement.dataset.theme === 'light' ? 'dark' : 'light';
+  document.documentElement.dataset.theme = next;
+  localStorage.setItem('loopwise-theme', next);
+  renderThemeToggle();
+});
+
+renderThemeToggle();
 renderGuide();
 selectProblem(PROBLEMS[0]);

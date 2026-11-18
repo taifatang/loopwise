@@ -4,16 +4,23 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Loopwise — pick the right loop</title>
+  <link rel="icon" type="image/svg+xml" href="logo.svg" />
   <link rel="stylesheet" href="styles.css" />
+  <script>
+    // Apply saved/system theme before first paint to avoid a flash.
+    document.documentElement.dataset.theme = localStorage.getItem('loopwise-theme')
+      || (matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
+  </script>
 </head>
 <body>
   <header>
-    <div class="brand">🔁 Loopwise</div>
+    <div class="brand"><img src="logo.svg" alt="" width="28" height="28" /><span>Loop<span class="wise">wise</span></span></div>
     <nav>
       <button class="tab active" data-view="practice">Practice</button>
       <button class="tab" data-view="guide">Pattern Guide</button>
     </nav>
     <div id="progress" class="progress"></div>
+    <button id="theme-toggle" title="Toggle light / dark theme" aria-label="Toggle light / dark theme"></button>
   </header>
 
   <div id="practice" class="view">
