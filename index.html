@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Loopwise — pick the right loop</title>
   <link rel="icon" type="image/svg+xml" href="logo.svg" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.css" />
   <link rel="stylesheet" href="styles.css" />
   <script>
     // Apply saved/system theme before first paint to avoid a flash.
@@ -68,6 +69,18 @@
         <div id="ref-note" class="muted"></div>
         <div id="player-ref" class="player"></div>
       </section>
+
+      <section class="card" id="code-card">
+        <h3><span class="step">6</span> Write it in code <span class="muted">(optional)</span></h3>
+        <div id="code-note" class="muted"></div>
+        <textarea id="code-editor" spellcheck="false"></textarea>
+        <div class="actions">
+          <button id="run-tests" class="primary">▶ Run tests</button>
+          <button id="reset-code">Reset code</button>
+          <span class="muted">Ctrl / ⌘ + Enter to run · runs in your browser, nothing is sent anywhere</span>
+        </div>
+        <div id="test-results"></div>
+      </section>
     </main>
   </div>
 
@@ -85,8 +98,16 @@
     </main>
   </div>
 
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/javascript/javascript.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/edit/matchbrackets.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/edit/closebrackets.min.js"></script>
   <script src="problems.js"></script>
   <script src="sim.js"></script>
+  <script src="problems-more.js"></script>
+  <script src="sims-more.js"></script>
+  <script src="tests.js"></script>
+  <script src="codepanel.js"></script>
   <script src="demos.js"></script>
   <script src="app.js"></script>
 </body>

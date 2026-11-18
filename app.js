@@ -139,6 +139,8 @@ function renderFeedback() {
       <p><b>${LOOPS[b.loop].name}</b> with ${b.required.map(varLabel).join(', ') || 'no extra variables'} <span class="tag">${b.complexity}</span></p>
       <p class="muted">${b.why}</p><pre class="code">${esc(b.code)}</pre>${refBtn}</details>`;
   const refBtn = '<button class="ref-btn" data-ref="1">▶ Watch the reference solution</button>';
+  const codeBtn = hasCodePanel(p) ? '<button class="ref-btn" data-code="1">💻 Try it in code</button>' : '';
+  let codeShown = false;
   const clue = (r2) => VARS[Array.isArray(r2) ? r2[0] : r2].clue;
   const plural = (n, w) => `${n} ${w}${n === 1 ? '' : 's'}`;
 
@@ -166,7 +168,8 @@ function renderFeedback() {
         html += `<p class="muted">…but ${plural(r.extra.length, 'variable')} you picked ${r.extra.length === 1 ? "isn't" : "aren't"} needed.`;
         html += tries >= 2 ? ` Not needed: <b>${r.extra.map((v) => VARS[v].name).join(', ')}</b></p>` : ' Can you spot which? Check again to see.</p>';
       }
-      html += `<pre class="code">${esc(r.best.code)}</pre>${refBtn}`;
+      html += `<pre class="code">${esc(r.best.code)}</pre>${refBtn} ${codeBtn}`;
+      codeShown = true;
       state.solved[p.id] = true;
       localStorage.setItem('loopwise-solved', JSON.stringify(state.solved));
       renderProblemList();
@@ -178,6 +181,7 @@ function renderFeedback() {
       html += again(3);
     }
   }
+  if (codeBtn && !codeShown) html += `<p>${codeBtn}</p>`;
   fb.innerHTML = html;
 }
 
@@ -291,6 +295,7 @@ function esc(s) { return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(
 function selectProblem(p) {
   state.problem = p;
   setSidebar(false);
+  loadCodePanel(p);
   resetChoice();
   renderProblemList();
   renderProblem();
@@ -309,6 +314,7 @@ function resetChoice() {
 $('#check').addEventListener('click', renderFeedback);
 $('#feedback').addEventListener('click', (e) => {
   if (e.target.closest('[data-ref]')) showReference();
+  if (e.target.closest('[data-code]')) showCodePanel();
 });
 $('#reset').addEventListener('click', resetChoice);
 $('#hint').addEventListener('click', () => {
@@ -319,6 +325,7 @@ $('#hint').addEventListener('click', () => {
 document.querySelectorAll('.tab').forEach((t) => t.addEventListener('click', () => {
   document.querySelectorAll('.tab').forEach((x) => x.classList.toggle('active', x === t));
   document.querySelectorAll('.view').forEach((v) => v.classList.toggle('hidden', v.id !== t.dataset.view));
+  if (codePanel.cm) codePanel.cm.refresh();
 }));
 
 // ---------- Theme ----------

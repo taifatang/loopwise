@@ -154,3 +154,25 @@ main { flex: 1; padding: 20px; max-width: 1000px; }
 .d-sep { width: 2px; height: 24px; background: var(--muted); margin: 0 4px; align-self: flex-end; }
 .d-link { color: var(--muted); font-size: 12px; align-self: flex-end; line-height: 24px; }
 .d-text { font-size: 11px; color: var(--muted); font-family: monospace; min-height: 14px; }
+
+/* ---------- Code panel ---------- */
+#code-card .CodeMirror { height: 280px; border: 1px solid var(--border); border-radius: 6px; font-size: 13.5px; line-height: 1.5; background: var(--code-bg); color: var(--text); margin-top: 8px; }
+#code-card textarea#code-editor { width: 100%; height: 280px; margin-top: 8px; font: 13.5px/1.5 "SF Mono", Menlo, Consolas, monospace; background: var(--code-bg); color: var(--text); border: 1px solid var(--border); border-radius: 6px; padding: 8px; }
+.CodeMirror-gutters { background: var(--panel2); border-right: 1px solid var(--border); }
+.CodeMirror-linenumber { color: var(--muted); }
+.CodeMirror-cursor { border-left-color: var(--text); }
+.CodeMirror-selected, .CodeMirror-focused .CodeMirror-selected { background: rgba(79, 140, 255, .28); }
+.CodeMirror-activeline-background { background: var(--panel2); }
+.CodeMirror-matchingbracket { color: var(--green) !important; text-decoration: underline; }
+.CodeMirror .cm-keyword, .CodeMirror .cm-atom { color: var(--accent-text); }
+.CodeMirror .cm-def, .CodeMirror .cm-variable-2 { color: var(--blue); }
+.CodeMirror .cm-string, .CodeMirror .cm-string-2 { color: var(--green); }
+.CodeMirror .cm-number { color: var(--amber); }
+.CodeMirror .cm-comment { color: var(--muted); font-style: italic; }
+.CodeMirror .cm-property, .CodeMirror .cm-operator, .CodeMirror .cm-variable, .CodeMirror .cm-punctuation { color: var(--text); }
+#test-results { margin-top: 12px; }
+.test-summary { font-weight: 700; font-size: 16px; margin-bottom: 8px; }
+.test-summary.pass { color: var(--green); } .test-summary.fail { color: var(--red); }
+.test-row { border-left: 3px solid var(--border); padding: 6px 10px; margin-bottom: 6px; background: var(--panel2); border-radius: 0 6px 6px 0; font-size: 13px; overflow-wrap: anywhere; }
+.test-row.pass { border-left-color: var(--green); } .test-row.fail { border-left-color: var(--red); }
+.test-logs { margin: 6px 0 0; padding: 6px 8px; background: var(--code-bg); border-radius: 4px; font-size: 12px; white-space: pre-wrap; max-height: 120px; overflow: auto; }
