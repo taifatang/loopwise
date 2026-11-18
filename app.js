@@ -33,15 +33,33 @@ function setSidebar(open) {
 }
 $('#sidebar-toggle').addEventListener('click', () => setSidebar(!document.body.classList.contains('sidebar-open')));
 
+// Solid shuffle icon (two curved arrows swapping places); inherits the text colour so it follows the theme.
+const SHUFFLE_ICON = `<svg class="icon" viewBox="0 0 512 512" width="18" height="18" aria-hidden="true">
+  <g fill="currentColor" stroke="none"><path d="M405 30l105 95-105 100z"/><path d="M405 280l105 90-105 100z"/></g>
+  <g fill="none" stroke="currentColor" stroke-width="64" stroke-linejoin="round">
+    <path d="M10 392h95c120 0 100-267 225-267h80"/>
+    <path d="M10 125h75c55 0 85 20 95 45"/>
+    <path d="M262 305c15 35 45 50 85 50h58"/>
+  </g></svg>`;
+
 // ---------- Rendering ----------
 function renderProblemList() {
-  $('#problem-list').innerHTML = PROBLEMS.map((p, i) => `
+  const left = PROBLEMS.filter((p) => !state.solved[p.id]).length;
+  $('#problem-list').innerHTML = `
+    <button type="button" id="random-challenge" class="random-btn"${left ? '' : ' disabled'}>${left ? `${SHUFFLE_ICON} Random challenge` : '🎉 All solved!'}</button>` + PROBLEMS.map((p, i) => `
     <div class="prob-item ${state.problem === p ? 'active' : ''} ${state.solved[p.id] ? 'done' : ''}" data-i="${i}"${state.solved[p.id] ? ' title="Solved"' : ''}>
       <span class="prob-title">${i + 1}. ${p.title}</span>
       <span class="diff ${p.difficulty}">${p.difficulty}</span>
     </div>`).join('');
   document.querySelectorAll('.prob-item').forEach((el) =>
     el.addEventListener('click', () => selectProblem(PROBLEMS[el.dataset.i])));
+  $('#random-challenge').addEventListener('click', () => {
+    const pool = PROBLEMS.filter((p) => !state.solved[p.id]);
+    // Avoid re-picking the current problem when there's another unsolved one.
+    const others = pool.filter((p) => p !== state.problem);
+    const choices = others.length ? others : pool;
+    if (choices.length) selectProblem(choices[Math.floor(Math.random() * choices.length)]);
+  });
   const n = Object.keys(state.solved).length;
   $('#progress').textContent = `${n} / ${PROBLEMS.length} solved optimally`;
 }

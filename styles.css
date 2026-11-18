@@ -44,7 +44,10 @@ nav { display: flex; gap: 6px; }
   main { padding: 14px; }
 }
 aside { width: 290px; min-width: 290px; height: calc(100vh - 52px); overflow-y: auto; border-right: 1px solid var(--border); background: var(--panel); position: sticky; top: 52px; }
-.prob-item { padding: 10px 16px; border-bottom: 1px solid var(--border); cursor: pointer; display: flex; justify-content: space-between; gap: 8px; font-size: 14px; }
+.random-btn { display: block; width: calc(100% - 24px); margin: 12px; font-weight: 600; }
+.random-btn .icon { vertical-align: -3px; margin-right: 6px; }
+.random-btn:disabled { opacity: .6; cursor: default; }
+.prob-item {padding: 10px 16px; border-bottom: 1px solid var(--border); cursor: pointer; display: flex; justify-content: space-between; gap: 8px; font-size: 14px; }
 .prob-item.done .prob-title { text-decoration: line-through; text-decoration-color: currentColor; color: var(--muted); }
 .prob-item:hover { background: var(--panel2); }
 .prob-item.active { background: var(--panel2); border-left: 3px solid var(--accent); }
