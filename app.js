@@ -5,9 +5,6 @@ const state = {
   problem: null,
   loop: null,
   vars: new Set(),
-  steps: [],
-  stepIdx: 0,
-  timer: null,
   tries: {},
   solved: JSON.parse(localStorage.getItem('loopwise-solved') || '{}'),
 };
@@ -75,7 +72,7 @@ function renderVars() {
     el.addEventListener('click', () => {
       const k = el.dataset.k;
       state.vars.has(k) ? state.vars.delete(k) : state.vars.add(k);
-      renderVars(); renderSkeleton();
+      renderVars(); renderSkeleton(); updateVisualiser();
     }));
 }
 
@@ -103,7 +100,8 @@ function renderFeedback() {
   const again = (n) => (tries < n ? `<p class="muted">Check again for a bigger clue (${tries}/${n - 1}).</p>` : '');
   const reveal = (b) => `<details><summary>Show the answer</summary>
       <p><b>${LOOPS[b.loop].name}</b> with ${b.required.map(varLabel).join(', ') || 'no extra variables'} <span class="tag">${b.complexity}</span></p>
-      <p class="muted">${b.why}</p><pre class="code">${esc(b.code)}</pre></details>`;
+      <p class="muted">${b.why}</p><pre class="code">${esc(b.code)}</pre>${refBtn}</details>`;
+  const refBtn = '<button class="ref-btn" data-ref="1">▶ Watch the reference solution</button>';
   const clue = (r2) => VARS[Array.isArray(r2) ? r2[0] : r2].clue;
   const plural = (n, w) => `${n} ${w}${n === 1 ? '' : 's'}`;
 
@@ -131,7 +129,7 @@ function renderFeedback() {
         html += `<p class="muted">…but ${plural(r.extra.length, 'variable')} you picked ${r.extra.length === 1 ? "isn't" : "aren't"} needed.`;
         html += tries >= 2 ? ` Not needed: <b>${r.extra.map((v) => VARS[v].name).join(', ')}</b></p>` : ' Can you spot which? Check again to see.</p>';
       }
-      html += `<pre class="code">${esc(r.best.code)}</pre>`;
+      html += `<pre class="code">${esc(r.best.code)}</pre>${refBtn}`;
       state.solved[p.id] = true;
       localStorage.setItem('loopwise-solved', JSON.stringify(state.solved));
       renderProblemList();
@@ -149,56 +147,98 @@ function renderFeedback() {
 // ---------- Visualiser ----------
 // Driven by the selected loop, so it can be played before checking.
 function updateVisualiser() {
-  stopPlay();
-  const body = $('#vis-body');
   if (!state.loop) {
+    mainPlayer.stop();
     $('#vis-note').textContent = 'Pick a loop to watch it run on the example input.';
-    body.classList.add('hidden');
+    $('#player-main').classList.add('hidden');
     return;
   }
-  const sol = state.problem.solutions.find((s) => s.loop === state.loop && s.trace);
-  if (!sol) {
-    $('#vis-note').textContent = `No walkthrough for "${LOOPS[state.loop].name}" on this problem. Think through how it would run, then check your choice.`;
-    body.classList.add('hidden');
-    return;
-  }
-  state.steps = sol.trace();
-  state.stepIdx = 0;
-  $('#vis-note').textContent = `Running "${LOOPS[state.loop].name}" on the example input.`;
-  body.classList.remove('hidden');
-  renderStep();
+  const names = [...state.vars].map((v) => VARS[v].name);
+  $('#vis-note').textContent = `Your ${LOOPS[state.loop].name} with ${names.length ? names.join(', ') : 'no variables'} — run as-is on the example input.`;
+  $('#player-main').classList.remove('hidden');
+  mainPlayer.load(simulate(state.problem, state.loop, state.vars));
 }
 
-function renderStep() {
-  const st = state.steps[state.stepIdx];
-  const names = Object.keys(st.ptr);
-  const cells = $('#cells');
-  cells.classList.toggle('as-grid', !!st.cols);
-  cells.style.gridTemplateColumns = st.cols ? `repeat(${st.cols}, 52px)` : '';
-  cells.innerHTML = st.arr.length ? st.arr.map((v, i) => {
-    const here = names.filter((n) => st.ptr[n] === i);
-    return `<div class="cell">
-      <div class="box ${here.length ? 'hl' : ''}">${v}</div>
-      <div class="idx">${i}</div>
-      <div class="ptrs">${here.map((n) => `<div style="color:${PTR_COLORS[names.indexOf(n) % PTR_COLORS.length]}">↑${n}</div>`).join('')}</div>
+function showReference() {
+  const best = state.problem.solutions[0];
+  $('#ref-note').textContent = `${LOOPS[best.loop].name} with ${best.required.map(varLabel).join(', ') || 'no extra variables'}.`;
+  $('#reference').classList.remove('hidden');
+  refPlayer.load(best.trace());
+  $('#reference').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function hideReference() {
+  refPlayer.stop();
+  $('#reference').classList.add('hidden');
+}
+
+const KIND_ICON = { loop: '🔁 loop', var: '✏️ variable', note: '💭', warn: '⚠️', end: '🏁' };
+
+// A self-contained step player; one for the learner's run, one for the reference.
+function createPlayer(root) {
+  root.innerHTML = `
+    <div class="cells"></div>
+    <div class="vis-msg"></div>
+    <table class="vars-table"></table>
+    <div class="actions">
+      <button data-a="first">⏮</button>
+      <button data-a="prev">◀</button>
+      <button data-a="play" class="primary">Play</button>
+      <button data-a="next">▶</button>
+      <button data-a="last">⏭</button>
+      <span class="muted step-count"></span>
     </div>`;
-  }).join('') : '<span class="muted">(empty)</span>';
-  $('#vis-msg').textContent = st.msg;
-  $('#vis-vars').innerHTML = Object.entries(st.vars).map(([k, v]) => `<tr><td>${k}</td><td>${v}</td></tr>`).join('');
-  $('#step-count').textContent = `Step ${state.stepIdx + 1} / ${state.steps.length}`;
+  const q = (sel) => root.querySelector(sel);
+  const p = {
+    steps: [], idx: 0, timer: null,
+    load(steps) { p.stop(); p.steps = steps; p.idx = 0; p.render(); },
+    go(i) { p.idx = Math.max(0, Math.min(p.steps.length - 1, i)); p.render(); },
+    stop() { clearInterval(p.timer); p.timer = null; q('[data-a="play"]').textContent = 'Play'; },
+    toggle() {
+      if (p.timer) return p.stop();
+      if (p.idx >= p.steps.length - 1) p.go(0);
+      q('[data-a="play"]').textContent = 'Pause';
+      p.timer = setInterval(() => (p.idx >= p.steps.length - 1 ? p.stop() : p.go(p.idx + 1)), 900);
+    },
+    render() {
+      const st = p.steps[p.idx];
+      if (!st) return;
+      const kind = st.kind || 'note';
+      const names = Object.keys(st.ptr);
+      const cells = q('.cells');
+      cells.classList.toggle('as-grid', !!st.cols);
+      cells.style.gridTemplateColumns = st.cols ? `repeat(${st.cols}, 52px)` : '';
+      cells.innerHTML = st.arr.length ? st.arr.map((v, i) => {
+        const here = names.filter((n) => st.ptr[n] === i);
+        const hl = here.length ? (kind === 'loop' || !st.kind ? 'hl' : 'hl-soft') : '';
+        return `<div class="cell">
+          <div class="box ${hl}">${v}</div>
+          <div class="idx">${i}</div>
+          <div class="ptrs">${here.map((n) => `<div style="color:${PTR_COLORS[names.indexOf(n) % PTR_COLORS.length]}">↑${n}</div>`).join('')}</div>
+        </div>`;
+      }).join('') : '<span class="muted">(empty)</span>';
+      const msg = q('.vis-msg');
+      msg.className = `vis-msg kind-${kind}`;
+      msg.innerHTML = `${st.kind ? `<span class="kind">${KIND_ICON[kind]}</span>` : ''}${esc(st.msg)}`;
+      const rows = Object.entries(st.vars);
+      q('.vars-table').innerHTML = rows.length
+        ? rows.map(([k, v]) => `<tr class="${st.hot === k ? 'hot' : ''}"><td>${esc(k)}</td><td>${esc(String(v))}</td></tr>`).join('')
+        : '<tr><td class="muted">no variables</td></tr>';
+      q('.step-count').textContent = `Step ${p.idx + 1} / ${p.steps.length}`;
+    },
+  };
+  root.addEventListener('click', (e) => {
+    const a = e.target.closest('[data-a]')?.dataset.a;
+    if (!a) return;
+    if (a === 'play') return p.toggle();
+    p.stop();
+    p.go({ first: 0, prev: p.idx - 1, next: p.idx + 1, last: p.steps.length - 1 }[a]);
+  });
+  return p;
 }
 
-const go = (i) => { state.stepIdx = Math.max(0, Math.min(state.steps.length - 1, i)); renderStep(); };
-function stopPlay() { clearInterval(state.timer); state.timer = null; $('#play').textContent = 'Play'; }
-function togglePlay() {
-  if (state.timer) return stopPlay();
-  if (state.stepIdx >= state.steps.length - 1) go(0);
-  $('#play').textContent = 'Pause';
-  state.timer = setInterval(() => {
-    if (state.stepIdx >= state.steps.length - 1) return stopPlay();
-    go(state.stepIdx + 1);
-  }, 900);
-}
+const mainPlayer = createPlayer($('#player-main'));
+const refPlayer = createPlayer($('#player-ref'));
 
 // ---------- Guide ----------
 function renderGuide() {
@@ -219,7 +259,7 @@ function selectProblem(p) {
 }
 
 function resetChoice() {
-  stopPlay();
+  hideReference();
   state.loop = null;
   state.vars = new Set();
   state.tries = {};
@@ -229,17 +269,15 @@ function resetChoice() {
 }
 
 $('#check').addEventListener('click', renderFeedback);
+$('#feedback').addEventListener('click', (e) => {
+  if (e.target.closest('[data-ref]')) showReference();
+});
 $('#reset').addEventListener('click', resetChoice);
 $('#hint').addEventListener('click', () => {
   const b = $('#hint-box');
   b.textContent = '💡 ' + state.problem.hint;
   b.classList.toggle('hidden');
 });
-$('#first').addEventListener('click', () => { stopPlay(); go(0); });
-$('#prev').addEventListener('click', () => { stopPlay(); go(state.stepIdx - 1); });
-$('#next').addEventListener('click', () => { stopPlay(); go(state.stepIdx + 1); });
-$('#last').addEventListener('click', () => { stopPlay(); go(state.steps.length - 1); });
-$('#play').addEventListener('click', togglePlay);
 document.querySelectorAll('.tab').forEach((t) => t.addEventListener('click', () => {
   document.querySelectorAll('.tab').forEach((x) => x.classList.toggle('active', x === t));
   document.querySelectorAll('.view').forEach((v) => v.classList.toggle('hidden', v.id !== t.dataset.view));

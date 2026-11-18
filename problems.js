@@ -358,8 +358,6 @@ const PROBLEMS = [
         } },
       { loop: 'single', required: [], rating: 'works', complexity: 'O(n) time',
         why: 'Linear scan finds it, but ignores that the array is sorted and fails the O(log n) requirement.' },
-      { loop: 'foreach', required: [], rating: 'works', complexity: 'O(n) time',
-        why: 'Linear scan finds it, but ignores that the array is sorted and fails the O(log n) requirement.' },
     ],
   },
   {

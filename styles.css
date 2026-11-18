@@ -34,7 +34,7 @@ nav { display: flex; gap: 6px; }
 .view { display: flex; }
 aside { width: 290px; min-width: 290px; height: calc(100vh - 52px); overflow-y: auto; border-right: 1px solid var(--border); background: var(--panel); position: sticky; top: 52px; }
 .prob-item { padding: 10px 16px; border-bottom: 1px solid var(--border); cursor: pointer; display: flex; justify-content: space-between; gap: 8px; font-size: 14px; }
-.prob-item.done .prob-title { text-decoration: line-through; text-decoration-color: var(--green); text-decoration-thickness: 2px; color: var(--muted); }
+.prob-item.done .prob-title { text-decoration: line-through; text-decoration-color: currentColor; color: var(--muted); }
 .prob-item:hover { background: var(--panel2); }
 .prob-item.active { background: var(--panel2); border-left: 3px solid var(--accent); }
 .diff { font-size: 12px; }
@@ -99,3 +99,16 @@ main { flex: 1; padding: 20px; max-width: 1000px; }
 .guide-table th { color: var(--muted); font-weight: 500; }
 .guide-table td code { color: var(--blue); }
 .cells.as-grid { display: grid; gap: 6px; }
+
+/* step kinds */
+.cell .box.hl-soft { border-color: var(--accent); border-style: dashed; }
+.vis-msg { border-left: 3px solid var(--border); }
+.vis-msg .kind { display: inline-block; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); margin-right: 8px; }
+.vis-msg.kind-loop { border-left-color: var(--accent); }
+.vis-msg.kind-var { border-left-color: var(--blue); }
+.vis-msg.kind-warn { border-left-color: var(--amber); }
+.vis-msg.kind-end { border-left-color: var(--green); font-weight: 600; }
+.vars-table tr.hot td { background: rgba(79, 140, 255, .18); color: var(--text); }
+.vars-table tr.hot td:first-child { border-left: 3px solid var(--blue); }
+.vars-table td { border-radius: 2px; transition: background .2s; }
+.ref-btn { margin-top: 10px; }

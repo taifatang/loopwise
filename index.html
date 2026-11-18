@@ -47,19 +47,7 @@
       <section class="card" id="visualiser">
         <h3><span class="step">4</span> Try it: step through your loop</h3>
         <div id="vis-note" class="muted"></div>
-        <div id="vis-body" class="hidden">
-          <div id="cells" class="cells"></div>
-          <div id="vis-msg" class="vis-msg"></div>
-          <table id="vis-vars" class="vars-table"></table>
-          <div class="actions">
-            <button id="first">⏮</button>
-            <button id="prev">◀</button>
-            <button id="play" class="primary">Play</button>
-            <button id="next">▶</button>
-            <button id="last">⏭</button>
-            <span id="step-count" class="muted"></span>
-          </div>
-        </div>
+        <div id="player-main" class="player hidden"></div>
       </section>
 
       <section class="card">
@@ -73,6 +61,12 @@
       </section>
 
       <section class="card hidden" id="feedback"></section>
+
+      <section class="card hidden" id="reference">
+        <h3>📘 Reference solution</h3>
+        <div id="ref-note" class="muted"></div>
+        <div id="player-ref" class="player"></div>
+      </section>
     </main>
   </div>
 
@@ -91,6 +85,7 @@
   </div>
 
   <script src="problems.js"></script>
+  <script src="sim.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

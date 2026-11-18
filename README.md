@@ -21,9 +21,9 @@ python3 -m http.server 8000   # then open http://localhost:8000
 2. Choose a loop pattern, such as indexed for, two pointers, sliding window or binary search.
 3. Toggle the variables you need, such as counter, temp, max so far or hash map. A code skeleton builds as you choose.
 4. Press **Check**. The result is Optimal, Works but not the best, Missing variables, or Wrong loop.
-5. Step through the visualiser to see pointers and variables change.
+5. Before checking, step through **your** choice. The loop and your variables run as-is on the example input, alternating between loop steps and variable updates. A missing variable shows up as a gap, an unused one is flagged, and the result is compared with the expected output. After solving, you can replay the reference solution.
 
 The **Pattern Guide** tab shows which signal words point to which loop.
 
 ## Adding problems
-Add an entry to `PROBLEMS` in `problems.js`. `solutions[0]` is the optimal one. Each solution sets a `loop`, the `required` vars (a nested array means "any of these"), optional `optional` vars, a `rating` (`optimal`/`works`) and an optional `trace()` for the visualiser.
+Add an entry to `PROBLEMS` in `problems.js`. `solutions[0]` is the optimal one. Each solution sets a `loop`, the `required` vars (a nested array means "any of these"), optional `optional` vars, a `rating` (`optimal`/`works`) and an optional `trace()` for the reference replay. Then add a matching entry to `SIMS` in `sim.js`: the `input` and `expected` output, plus hooks such as `visit(c, i)` and `pair(c, i, j)` that update only the variables the learner picked, through `c.upd(varId, value, msg)`.
