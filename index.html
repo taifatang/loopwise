@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Loopwise — pick the right loop</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header>
+    <div class="brand">🔁 Loopwise</div>
+    <nav>
+      <button class="tab active" data-view="practice">Practice</button>
+      <button class="tab" data-view="guide">Pattern Guide</button>
+    </nav>
+    <div id="progress" class="progress"></div>
+  </header>
+
+  <div id="practice" class="view">
+    <aside id="problem-list"></aside>
+
+    <main>
+      <section class="card" id="problem"></section>
+
+      <section class="card">
+        <h3><span class="step">1</span> Choose the loop</h3>
+        <div id="loops" class="grid"></div>
+      </section>
+
+      <section class="card">
+        <h3><span class="step">2</span> Choose the variables you need</h3>
+        <div id="vars" class="chips"></div>
+      </section>
+
+      <section class="card">
+        <h3><span class="step">3</span> Your skeleton</h3>
+        <pre id="skeleton" class="code"></pre>
+      </section>
+
+      <section class="card" id="visualiser">
+        <h3><span class="step">4</span> Try it: step through your loop</h3>
+        <div id="vis-note" class="muted"></div>
+        <div id="vis-body" class="hidden">
+          <div id="cells" class="cells"></div>
+          <div id="vis-msg" class="vis-msg"></div>
+          <table id="vis-vars" class="vars-table"></table>
+          <div class="actions">
+            <button id="first">⏮</button>
+            <button id="prev">◀</button>
+            <button id="play" class="primary">Play</button>
+            <button id="next">▶</button>
+            <button id="last">⏭</button>
+            <span id="step-count" class="muted"></span>
+          </div>
+        </div>
+      </section>
+
+      <section class="card">
+        <h3><span class="step">5</span> Check your answer</h3>
+        <div class="actions">
+          <button id="check" class="primary">Check my choice</button>
+          <button id="hint">Show hint</button>
+          <button id="reset">Reset</button>
+        </div>
+        <div id="hint-box" class="hint hidden"></div>
+      </section>
+
+      <section class="card hidden" id="feedback"></section>
+    </main>
+  </div>
+
+  <div id="guide" class="view hidden">
+    <main class="guide-main">
+      <section class="card">
+        <h2>Which loop for which problem?</h2>
+        <p class="muted">Look for the signal words in the problem statement, then pick the loop.</p>
+        <table class="guide-table" id="guide-table"></table>
+      </section>
+      <section class="card">
+        <h2>Variables cheat sheet</h2>
+        <table class="guide-table" id="vars-table"></table>
+      </section>
+    </main>
+  </div>
+
+  <script src="problems.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
