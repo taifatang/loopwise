@@ -204,7 +204,16 @@ function showReference() {
   const best = state.problem.solutions[0];
   $('#ref-note').textContent = `${LOOPS[best.loop].name} with ${best.required.map(varLabel).join(', ') || 'no extra variables'}.`;
   $('#reference').classList.remove('hidden');
-  refPlayer.load(best.trace());
+  // Opening "declare" state comes from the same simulator that drives your own run.
+  // ...and so does the closing banner, so both players print exactly the same kind of result line.
+  let init = null, endMsg = null;
+  try {
+    const sim = simulate(state.problem, best.loop, new Set([...best.required.map((r) => (Array.isArray(r) ? r[0] : r)), ...(best.optional || [])]));
+    init = sim[0].vars;
+    const end = sim.filter((x) => x.kind === 'end').pop();
+    if (end && end.msg.includes('✓')) endMsg = end.msg; // only trust it when the simulation reached the expected answer
+  } catch (e) { /* fall back to the trace's own values and message */ }
+  refPlayer.load(best.trace(), declaredNames(best), init, endMsg);
   $('#reference').scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
@@ -213,10 +222,79 @@ function hideReference() {
   $('#reference').classList.add('hidden');
 }
 
-const KIND_ICON = { loop: '🔁 loop', var: '✏️ variable', note: '💭', warn: '⚠️', end: '🏁' };
+const KIND_ICON = { loop: '🔁 loop', var: '✏️ variable', note: '💭', warn: '⚠️', error: '⛔ error', end: '🏁' };
+
+// The reference solution is recorded one snapshot per iteration. Split each snapshot into the same
+// two beats the learner's run has: (1) the pointer(s) lit up, variables still as they were, then
+// (2) the changed variable(s) lit up, with the pointer(s) off.
+// It also frames the run like the learner's: an opening "declare" state with nothing lit, and a
+// closing result banner.
+// Like the learner's table, it only lists the variables the solution actually declares (not helper
+// values such as the current character), and pointer variables (left / right / lo / mid / hi) are
+// shown as rows that change quietly on the pointer beat.
+const VAR_ALIASES = {
+  counter: ['count'], temp: ['temp'], max: ['max'], min: ['min'], sum: ['sum'], map: ['map'], set: ['seen', 'set'],
+  lr: ['left', 'right'], slow: ['slow'], bounds: ['lo', 'mid', 'hi'], winStart: ['left'], prevCurr: ['prev', 'curr'],
+  result: ['result'], flag: ['swapped'], ij: ['i', 'j'], stack: ['stack'], queue: ['queue'], visited: ['visited'],
+  dp: ['dp'], path: ['path'],
+};
+const POINTER_ROWS = ['left', 'right', 'lo', 'hi', 'mid']; // row order matches the learner's table
+const MOVE_ROWS = ['left', 'right', 'lo', 'hi']; // written by a move; `mid` is just recomputed each iteration
+const declaredNames = (sol) => new Set([...sol.required.flat(), ...(sol.optional || [])].flatMap((v) => VAR_ALIASES[v] || []));
+
+function expandSteps(steps, allowed, initVars, endMsg) {
+  // `vars` = ordinary variables; `pv` = pointer variables (values taken from the pointers themselves).
+  let shaped = steps.map((s) => {
+    if (!allowed) return { ...s, pv: {} };
+    const vars = {}, pv = {};
+    for (const [k, v] of Object.entries(s.vars)) if (allowed.has(k) && !POINTER_ROWS.includes(k)) vars[k] = v;
+    for (const n of POINTER_ROWS) {
+      if (!allowed.has(n)) continue;
+      const v = n in s.vars ? s.vars[n] : s.ptr[n];
+      if (v !== undefined) pv[n] = v;
+    }
+    return { ...s, vars, pv };
+  });
+  // If the names didn't line up at all, fall back to showing everything rather than an empty table.
+  if (allowed && shaped.every((s) => !Object.keys(s.vars).length && !Object.keys(s.pv).length)) shaped = steps.map((s) => ({ ...s, pv: {} }));
+
+  // The declared variables with their starting values, exactly as the learner's declare step shows them.
+  const initRows = allowed && initVars
+    ? Object.fromEntries(Object.entries(initVars).filter(([k]) => allowed.has(k) && !POINTER_ROWS.includes(k)))
+    : {};
+  const hasInit = Object.keys(initRows).length > 0;
+  const out = [];
+  let prev = { ...initRows }, prevPtr = null;
+  shaped.forEach((s, i) => {
+    const changed = Object.keys(s.vars).filter((k) => String(prev[k]) !== String(s.vars[k]));
+    const hasPtr = Object.keys(s.ptr).length > 0;
+    // Several snapshots can share one iteration (same pointers): only the first lights the pointer(s).
+    const samePtr = prevPtr !== null && JSON.stringify(prevPtr) === JSON.stringify(s.ptr);
+    prevPtr = s.ptr;
+    if (i === 0) {
+      // Opening state: the declarations, nothing highlighted.
+      out.push(hasPtr ? { ...s, kind: 'note', ptr: {}, vars: { ...initRows }, hot: [] } : { ...s, kind: 'note', vars: hasInit ? { ...initRows } : { ...s.pv, ...s.vars }, hot: [] });
+      if (!hasPtr) { prev = s.vars; return; }
+    }
+    // Beat 1: pointer(s) lit, variables as they were.
+    if (hasPtr && !samePtr) out.push({ ...s, kind: 'loop', vars: { ...s.pv, ...prev }, hot: [] });
+    // Beat 2: the variable(s) written this iteration lit, pointer cells off.
+    if (changed.length) out.push({ ...s, kind: 'var', vars: { ...s.pv, ...s.vars }, hot: changed });
+    // Beat 3: the pointer move that leads into the next iteration (all moved pointers together).
+    const next = shaped[i + 1];
+    if (next) {
+      const moved = MOVE_ROWS.filter((k) => k in s.pv && k in next.pv && String(s.pv[k]) !== String(next.pv[k]));
+      if (moved.length) out.push({ ...s, kind: 'var', vars: { ...next.pv, ...s.vars }, hot: moved });
+    }
+    prev = s.vars;
+  });
+  const last = shaped[shaped.length - 1];
+  if (last && out[out.length - 1].kind !== 'end') out.push({ ...last, kind: 'end', msg: endMsg || last.msg, vars: out[out.length - 1].vars, hot: [] });
+  return out;
+}
 
 // A self-contained step player; one for the learner's run, one for the reference.
-function createPlayer(root) {
+function createPlayer(root, opts = {}) {
   root.innerHTML = `
     <div class="cells"></div>
     <div class="vis-msg"></div>
@@ -232,39 +310,88 @@ function createPlayer(root) {
   const q = (sel) => root.querySelector(sel);
   const p = {
     steps: [], idx: 0, timer: null,
-    load(steps) { p.stop(); p.steps = steps; p.idx = 0; p.render(); },
+    colors: new Map(), ptrNames: new Set(),
+    // Each pointer name keeps the same colour for the whole run.
+    colorOf(n) { if (!p.colors.has(n)) p.colors.set(n, PTR_COLORS[p.colors.size % PTR_COLORS.length]); return p.colors.get(n); },
+    load(raw, allowed, initVars, endMsg) {
+      // Learner's run: drop check-only steps (they light nothing up) so the beats are
+      // pointer → variable → pointer. Reference run: split snapshots into those same beats.
+      const steps = opts.expand ? expandSteps(raw, allowed, initVars, endMsg) : opts.captions === false ? raw.filter((s, i) => i === 0 || (s.kind !== 'note' && !(s.kind === 'loop' && !Object.keys(s.ptr).length))) : raw;
+      p.stop(); p.steps = steps; p.idx = 0; p.colors = new Map();
+      // Give every pointer its colour up front, so a pointer variable's row can use it even on a
+      // step where no cell is lit.
+      p.ptrNames = new Set();
+      steps.forEach((s) => Object.keys(s.ptr).forEach((n) => { p.ptrNames.add(n); p.colorOf(n); }));
+      // Most pointers ever sharing one cell during the run: reserve that many label lines up front
+      // so the layout never grows when pointers land on the same element.
+      p.stack = steps.reduce((m, s) => {
+        const per = {};
+        for (const v of Object.values(s.ptr)) per[v] = (per[v] || 0) + 1;
+        return Math.max(m, ...Object.values(per));
+      }, 1);
+      p.rowCount = steps.reduce((m, s) => Math.max(m, Object.keys(s.vars).length), 1);
+      p.render();
+    },
     go(i) { p.idx = Math.max(0, Math.min(p.steps.length - 1, i)); p.render(); },
     stop() { clearInterval(p.timer); p.timer = null; q('[data-a="play"]').textContent = 'Play'; },
     toggle() {
       if (p.timer) return p.stop();
       if (p.idx >= p.steps.length - 1) p.go(0);
       q('[data-a="play"]').textContent = 'Pause';
-      p.timer = setInterval(() => (p.idx >= p.steps.length - 1 ? p.stop() : p.go(p.idx + 1)), 900);
+      p.timer = setInterval(() => (p.idx >= p.steps.length - 1 ? p.stop() : p.go(p.idx + 1)), 550);
     },
     render() {
       const st = p.steps[p.idx];
       if (!st) return;
       const kind = st.kind || 'note';
       const names = Object.keys(st.ptr);
+      const colorOf = p.colorOf;
       const cells = q('.cells');
       cells.classList.toggle('as-grid', !!st.cols);
       cells.style.gridTemplateColumns = st.cols ? `repeat(${st.cols}, 52px)` : '';
       cells.innerHTML = st.arr.length ? st.arr.map((v, i) => {
         const here = names.filter((n) => st.ptr[n] === i);
-        const hl = here.length ? (kind === 'loop' || !st.kind ? 'hl' : 'hl-soft') : '';
+        const cols = here.map(colorOf);
+        // Beat 1 only: the pointer's cell lights up in the same colour as its arrow label (several pointers
+        // light up together; a second pointer on the same cell adds an outer ring). On the variable beat
+        // the cell goes back to normal, though the arrow label stays so you can still see where you are.
+        const lit = cols.length && (!st.kind || kind === 'loop');
+        const style = lit
+          ? `border-color:${cols[0]};background:color-mix(in srgb, ${cols[0]} 18%, transparent);${cols[1] ? `box-shadow:0 0 0 3px ${cols[1]};` : ''}`
+          : '';
         return `<div class="cell">
-          <div class="box ${hl}">${v}</div>
+          <div class="box ${lit ? 'hl' : ''}" style="${style}">${v}</div>
           <div class="idx">${i}</div>
-          <div class="ptrs">${here.map((n) => `<div style="color:${PTR_COLORS[names.indexOf(n) % PTR_COLORS.length]}">↑${n}</div>`).join('')}</div>
+          <div class="ptrs" style="min-height:${p.stack * 14.5}px">${here.map((n) => `<div style="color:${colorOf(n)}">↑${n}</div>`).join('')}</div>
         </div>`;
       }).join('') : '<span class="muted">(empty)</span>';
       const msg = q('.vis-msg');
-      msg.className = `vis-msg kind-${kind}`;
-      msg.innerHTML = `${st.kind ? `<span class="kind">${KIND_ICON[kind]}</span>` : ''}${esc(st.msg)}`;
+      // The learner's own run is driven by the highlights alone (orange cell / orange variable);
+      // text only appears for warnings and the final result. The reference walkthrough keeps captions.
+      const isLast = p.idx === p.steps.length - 1;
+      // A banner that reports a failure (an error, or a result that isn't the expected answer) is red; success is green.
+      const failed = kind === 'error' || (kind === 'end' && !st.msg.includes('✓'));
+      const quiet = opts.captions === false && kind !== 'warn' && kind !== 'error' && kind !== 'end' && !(!st.kind && isLast);
+      msg.className = `vis-msg kind-${kind}${quiet ? ' quiet' : ''}${failed ? ' fail' : ''}`;
+      if (quiet) msg.innerHTML = '';
+      else {
+        // Keep the current loop iteration visible while its variable updates / checks play out.
+        let ctx = '';
+        if (opts.captions !== false && st.kind && kind !== 'loop' && kind !== 'end') {
+          for (let j = p.idx - 1; j >= 0; j--) if (p.steps[j].kind === 'loop') { ctx = p.steps[j].msg; break; }
+        }
+        msg.innerHTML = `${opts.captions === false ? '' : `<div class="vis-ctx">${esc(ctx)}</div>`}${st.kind ? `<span class="kind">${KIND_ICON[kind]}</span>` : ''}${esc(st.msg)}`;
+      }
       const rows = Object.entries(st.vars);
-      q('.vars-table').innerHTML = rows.length
-        ? rows.map(([k, v]) => `<tr class="${st.hot === k ? 'hot' : ''}"><td>${esc(k)}</td><td>${esc(String(v))}</td></tr>`).join('')
-        : '<tr><td class="muted">no variables</td></tr>';
+      // Update steps name their variable; reference steps don't, so highlight whatever changed since the last step.
+      const prevVars = p.steps[p.idx - 1] ? p.steps[p.idx - 1].vars : null;
+      const hotKeys = new Set(st.kind ? [].concat(st.hot ?? []) : prevVars ? rows.filter(([k, v]) => String(prevVars[k]) !== String(v)).map(([k]) => k) : []);
+      // Pad with blank rows up to the most variables shown at any step, so the table never grows mid-run.
+      const blanks = '<tr class="blank"><td>&nbsp;</td><td></td></tr>'.repeat(Math.max(0, p.rowCount - Math.max(rows.length, 1)));
+      q('.vars-table').innerHTML = (rows.length
+        // A lit pointer variable (left, right, lo, …) uses the same colour as its pointer; others stay orange.
+        ? rows.map(([k, v]) => `<tr class="${hotKeys.has(k) ? 'hot' : ''}"${p.ptrNames.has(k) ? ` style="--hot:${colorOf(k)}"` : ''}><td>${esc(k)}</td><td>${esc(String(v))}</td></tr>`).join('')
+        : '<tr><td class="muted">no variables</td></tr>') + blanks;
       q('.step-count').textContent = `Step ${p.idx + 1} / ${p.steps.length}`;
     },
   };
@@ -278,8 +405,8 @@ function createPlayer(root) {
   return p;
 }
 
-const mainPlayer = createPlayer($('#player-main'));
-const refPlayer = createPlayer($('#player-ref'));
+const mainPlayer = createPlayer($('#player-main'), { captions: false });
+const refPlayer = createPlayer($('#player-ref'), { captions: false, expand: true });
 
 // ---------- Guide ----------
 function renderGuide() {

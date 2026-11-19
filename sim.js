@@ -88,7 +88,15 @@ function simulate(problem, loopId, chosen) {
   }
   const unused = [...chosen].filter((v) => !c.touched.has(v));
   if (unused.length) c.push('note', `Declared but never used: ${unused.map((v) => VARS[v].name).join(', ')}`);
-  return c.steps;
+  return stopAtFirstError(c.steps);
+}
+
+// The run stops at the first thing that goes wrong in the learner's design (a missing variable, a
+// missing index, a warning…) and reports it as an error, instead of carrying on past it.
+const ERROR_NOTE = /nothing|nowhere|can't|cannot|no index|overwrites|before it is saved|doesn't remember|never builds/i;
+function stopAtFirstError(steps) {
+  const i = steps.findIndex((s, k) => k > 0 && (s.kind === 'warn' || (s.kind === 'note' && ERROR_NOTE.test(s.msg))));
+  return i < 0 ? steps : [...steps.slice(0, i), { ...steps[i], kind: 'error' }];
 }
 
 // ---------------------------------------------------------------------
@@ -178,8 +186,12 @@ const DRIVERS = {
       c.pair(l, r);
       if (c.done) break;
       const m = c.s.move ? c.s.move(c, l, r) : 'both';
-      if (m === 'left' || m === 'both') l++;
-      if (m === 'right' || m === 'both') r--;
+      const moved = [];
+      if (m === 'left' || m === 'both') { l++; moved.push('left'); }
+      if (m === 'right' || m === 'both') { r--; moved.push('right'); }
+      // The pointer(s) being written is its own beat: every pointer that moved lights up together.
+      c.extra.left = l; c.extra.right = r;
+      c.snap('var', `move ${moved.join(' & ')} → left = ${l}, right = ${r}`, moved);
     }
     if (!c.done) { c.extra.left = l; c.extra.right = r; c.ptr = {}; c.loop(`left (${l}) ≥ right (${r}) → loop ends`); }
   },

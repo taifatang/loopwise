@@ -115,8 +115,9 @@ main { flex: 1; padding: 20px; max-width: 1000px; }
 .cell .idx { font-size: 11px; color: var(--muted); margin-top: 2px; }
 .cell .ptrs { font-size: 11px; font-weight: 700; text-align: center; min-height: 14px; line-height: 1.3; }
 .vis-msg { padding: 10px 14px; background: var(--panel2); border-radius: 6px; margin: 10px 0; font-size: 14px; }
-.vars-table { border-collapse: collapse; font-size: 13px; font-family: monospace; }
-.vars-table td { padding: 4px 14px 4px 0; } .vars-table td:first-child { color: var(--muted); }
+.vars-table { border-collapse: separate; border-spacing: 0 3px; /* separate rows so two lit rows each keep their own full border */ font-size: 13px; font-family: monospace; }
+.vars-table td { padding: 4px 14px; border: 2px solid transparent; border-left: 0; border-right: 0; }
+.vars-table td:first-child { border-left: 2px solid transparent; } .vars-table td:last-child { border-right: 2px solid transparent; } .vars-table td:first-child { color: var(--muted); }
 
 .guide-table { width: 100%; border-collapse: collapse; font-size: 14px; }
 .guide-table th, .guide-table td { text-align: left; padding: 10px; border-bottom: 1px solid var(--border); vertical-align: top; }
@@ -125,15 +126,26 @@ main { flex: 1; padding: 20px; max-width: 1000px; }
 .cells.as-grid { display: grid; gap: 6px; }
 
 /* step kinds */
-.cell .box.hl-soft { border-color: var(--accent); border-style: dashed; }
 .vis-msg { border-left: 3px solid var(--border); }
 .vis-msg .kind { display: inline-block; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); margin-right: 8px; }
 .vis-msg.kind-loop { border-left-color: var(--accent); }
 .vis-msg.kind-var { border-left-color: var(--blue); }
 .vis-msg.kind-warn { border-left-color: var(--amber); }
-.vis-msg.kind-end { border-left-color: var(--green); font-weight: 600; }
-.vars-table tr.hot td { background: rgba(79, 140, 255, .18); color: var(--text); }
-.vars-table tr.hot td:first-child { border-left: 3px solid var(--blue); }
+.vis-msg.kind-end { border-left-color: var(--green); font-weight: 600; background: color-mix(in srgb, var(--green) 12%, var(--panel2)); }
+.vis-msg.kind-error, .vis-msg.fail { border-left-color: var(--red); font-weight: 600; background: color-mix(in srgb, var(--red) 12%, var(--panel2)); }
+.vis-msg.fail .kind { color: var(--red); }
+.vars-table tr.hot td { background: color-mix(in srgb, var(--hot, var(--accent)) 18%, transparent); color: var(--text); border-top: 2px solid var(--hot, var(--accent)); border-bottom: 2px solid var(--hot, var(--accent)); font-weight: 600; }
+.vars-table tr.hot td:first-child { border-left: 2px solid var(--hot, var(--accent)); border-radius: 6px 0 0 6px; color: var(--hot, var(--accent-text)); }
+.vars-table tr.hot td:last-child { border-right: 2px solid var(--hot, var(--accent)); border-radius: 0 6px 6px 0; }
+/* Fixed height so the controls below never jump as the message changes length. */
+.vis-msg { min-height: 104px; }
+/* Your run: no reserved space. Warnings / the final result appear between the array and the variables, only when there is one. */
+#player-main, #player-ref { display: flex; flex-direction: column; }
+#player-main .vis-msg, #player-ref .vis-msg { min-height: 0; }
+#player-main .vars-table, #player-ref .vars-table { align-self: flex-start; }
+.vis-msg.quiet { display: none; }
+.vis-ctx { font-size: 12px; color: var(--muted); min-height: 17px; margin-bottom: 4px; padding-bottom: 4px; border-bottom: 1px dashed var(--border); }
+.vis-ctx:empty { border-bottom-color: transparent; }
 .vars-table td { border-radius: 2px; transition: background .2s; }
 .ref-btn { margin-top: 10px; }
 
